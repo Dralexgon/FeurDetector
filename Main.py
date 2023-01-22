@@ -1,16 +1,13 @@
-#This is a discord bot made by Dralexgon.
-#He store all messages in a database and can do some stuff with it.
+#This is a discord bot made by Dralexgon. 
+#It's a bot that counts the number of time each person said "feur" in the server.
 
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 from discord.ext.commands import Bot
-import asyncio
-import time
+
 
 from Log import Log
 
-#intents = discord.Intents.default()
-#intents.members = True
 client = commands.Bot(command_prefix = "!", help_command=None, intents=discord.Intents.all())
 client.remove_command('help')
 
