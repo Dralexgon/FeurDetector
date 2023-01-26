@@ -54,41 +54,65 @@ async def count_feur(ctx: commands.Context):
             embedChannelAnalyzing.add_field(name=channel.name, value="Waiting.", inline=False)
 
     messageChannelAnalyzing = await ctx.send(ctx.author.mention, embed=embedChannelAnalyzing)
-    
 
     result = {}
     for i in range(len(ctx.guild.channels)):
+        #if the number of channels is greater than 25, we will send a new embed every 25 channels.
+        if i % 25 == 0 and i != 0:
+            embedChannelAnalyzing = discord.Embed(
+                title = f"Analyzing channels ({i + 1}/{len(ctx.guild.channels) // 25} pages)",
+                colour = discord.Colour.blue()
+            )
+            for j in range(25):
+                try:
+                    embedChannelAnalyzing.add_field(name=ctx.guild.channels[i + j].name, value="Waiting.", inline=False)
+                except:
+                    break
+        
+        #here we will analyze the channel
         channel = ctx.guild.channels[i]
         if channel.type == discord.ChannelType.text:
             countMessages = 0
             countFeurs = 0
             embedChannelAnalyzing.set_field_at(index=(i - 1), name=channel.name, value="Analyzing...", inline=False)
             await messageChannelAnalyzing.edit(embed=embedChannelAnalyzing)
+
+            #we will get all the messages in the channel
             messages = await channel.history(limit=None).flatten()
             for message in messages:
                 countMessages += 1
-                if message.content.lower().__contains__("feur"):
+                if not(message.content.lower().__contains__("count_feur")) and message.content.lower().__contains__("feur"):
                     Log.print(f"Found feur in {channel.name} from {message.author.name}")
                     countFeurs += 1
                     if message.author.name in result:
                         result[message.author.name] += 1
                     else:
                         result[message.author.name] = 1
-                embedChannelAnalyzing.set_field_at(index=(i - 1), name=channel.name, value=f"Analyzing... ({countMessages}/{len(messages)} messages, {countFeurs} feurs)", inline=False)
-            embedChannelAnalyzing.set_field_at(index=(i - 1), name=channel.name, value=f"Done. ({countMessages} messages, {countFeurs} feurs)", inline=False)
-            await messageChannelAnalyzing.edit(embed=embedChannelAnalyzing)
+                embedChannelAnalyzing.set_field_at(index=((i % 25) - 1), name=channel.name, value=f"Analyzing... ({countMessages}/{len(messages)} messages, {countFeurs} feurs)", inline=False)
 
+            embedChannelAnalyzing.set_field_at(index=((i % 25) - 1), name=channel.name, value=f"Done. ({countMessages} messages, {countFeurs} feurs)", inline=False)
+            await messageChannelAnalyzing.edit(embed=embedChannelAnalyzing)
+    
+    #send the result
     embedCountFeur = discord.Embed(
         title = "Number of feur",
         colour = discord.Colour.blue()
     )
-    #sort the result
-    result = dict(sorted(result.items(), key=lambda item: item[1], reverse=True))
+    result = dict(sorted(result.items(), key=lambda item: item[1], reverse=True)) #sort the result
     for user in result:
         embedCountFeur.add_field(name=user, value=result[user], inline=False)
     await ctx.send(ctx.author.mention, embed=embedCountFeur)
     
-
+@client.event
+async def on_message(message : discord.Message):
+    #All non-bot or non-command messages will be stored in a database.
+    if message.content.startswith(client.command_prefix):
+        await client.process_commands(message)
+        return
+    if message.author.name == client.user.name:
+        return
+    
+    
     
 #note, if you want to run this code, you need to create a file called token.txt one directory above the code and put your token in it.
 token = open('../token.txt', 'r').readlines()[0]
